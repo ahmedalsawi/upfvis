@@ -4,6 +4,7 @@ project (${PROJECT_NAME} CXX C)
 
 
 include_directories("${PROJECT_SOURCE_DIR}/src")
+include_directories("/usr/include/tcl8.6")
 
 add_executable(upfvis src/upfvis.cc)
 
