@@ -15,26 +15,52 @@ struct PowerState
     int voltage;
 };
 
-class PowerPort
+enum class PPORT_DIR
 {
-public:
-    std::string name;
-
-    PowerNet *loconn;
-    PowerNet *highconn;
-
-    std::string domain;
-
-    PowerPort() {}
-    ~PowerPort() {}
+    IN,
+    OUT,
+    INOUT
 };
 
 class PowerNet
 {
 public:
     std::string name;
-    std::string domain;
-    std::vector<std::string> ports;
+    std::string domain; // provided in command
+
+    // Deduced from create_supply_net if -domain is used, it creates object in the same logical hierarchy as domain. if not, it uses active scope.
+    std::string scope;
+
+    // resolved ports names to port objects
+    std::vector<PowerPort *> ports;
+
+    friend std::ostream &operator<<(std::ostream &os, const PowerNet &pd)
+    {
+        os << "Power Net: Name: " << pd.name << std::endl;
+        return os;
+    }
+};
+
+class PowerPort
+{
+public:
+    std::string name;
+    std::string domain; // provided in command
+
+    PPORT_DIR direction = PPORT_DIR::IN; // default "in"
+
+    // deduced from create_supply_port... if -domain is used, it creates object in the same logical hierarchy as domain. if not, it uses active scope.
+    std::string scope;
+
+    // resolve Low and High connection
+    PowerNet *HighConn;
+    PowerNet *LowConn;
+
+    friend std::ostream &operator<<(std::ostream &os, const PowerPort &pd)
+    {
+        os << "Power Port: Name: " << pd.name << std::endl;
+        return os;
+    }
 };
 
 class PowerDomain
@@ -44,29 +70,42 @@ public:
     std::string scope;
 
     std::vector<std::string> elements;
+    std::vector<std::string> exclude_elements;
     bool include_scope;
+
+    // resolved nets and ports
+    std::vector<PowerNet *> nets;
+    std::vector<PowerPort *> ports;
 
     friend std::ostream &operator<<(std::ostream &os, const PowerDomain &pd)
     {
         os << "Power Domain: Name: " << pd.name << std::endl;
+        os << "Power Domain: elements: " << std::endl;
+        for (auto el : pd.elements)
+        {
+            os << "\t" << el << std::endl;
+        }
         return os;
     }
-
-    PowerDomain(std::string name) : name(name) {}
-    ~PowerDomain() {}
 };
 
 class UPFEngine
 {
-    std::vector<PowerDomain> domains;
-    std::string active_scope;
-
 public:
+    std::vector<PowerDomain> domains;
+    std::vector<PowerPort> ports;
+    std::vector<PowerNet> nets;
+
+    std::string active_scope;
+    std::string root; // TODO Pare root name on CLI
+
     UPFEngine() = default;
 
     void run()
     {
-        domains.push_back(PowerDomain("TOP"));
+        PowerDomain domain;
+        domain.elements.push_back("/dd/dd");
+        domains.push_back(domain);
     }
 
     void dump_upf()
@@ -74,6 +113,14 @@ public:
         for (auto domain : this->domains)
         {
             std::cout << domain;
+        }
+        for (auto port : this->ports)
+        {
+            std::cout << port;
+        }
+        for (auto net : this->nets)
+        {
+            std::cout << net;
         }
     }
 };
