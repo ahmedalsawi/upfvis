@@ -24,6 +24,7 @@ enum class PPORT_DIR
 
 class PowerNet
 {
+
 public:
     std::string name;
     std::string domain; // provided in command
@@ -43,6 +44,7 @@ public:
 
 class PowerPort
 {
+
 public:
     std::string name;
     std::string domain; // provided in command
@@ -53,8 +55,10 @@ public:
     std::string scope;
 
     // resolve Low and High connection
-    PowerNet *HighConn;
     PowerNet *LowConn;
+    PowerNet *HighConn;
+
+    PowerDomain *domain_pd;
 
     friend std::ostream &operator<<(std::ostream &os, const PowerPort &pd)
     {
@@ -65,6 +69,7 @@ public:
 
 class PowerDomain
 {
+
 public:
     std::string name;
     std::string scope;
@@ -106,6 +111,22 @@ public:
         PowerDomain domain;
         domain.elements.push_back("/dd/dd");
         domains.push_back(domain);
+
+        PowerPort port;
+        std::string scope;
+        port.name = "port1";
+        port.domain = "domain1";
+        for (auto domain : domains)
+        {
+            if (domain.name == port.domain)
+            {
+                scope = domain.scope;
+                domain.ports.push_back(&port);
+                break;
+            }
+        }
+        port.scope = scope;
+        ports.push_back(port);
     }
 
     void dump_upf()
